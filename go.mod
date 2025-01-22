@@ -5,7 +5,7 @@ go 1.23.3
 require (
 	connectrpc.com/connect v1.18.1
 	github.com/jackc/pgx/v5 v5.7.2
-	golang.org/x/net v0.23.0
+	golang.org/x/net v0.33.0
 	golang.org/x/sync v0.10.0
 	google.golang.org/protobuf v1.36.3
 )
