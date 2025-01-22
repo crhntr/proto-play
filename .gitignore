@@ -28,3 +28,6 @@
 !sqlc.yaml
 
 !.envrc
+
+!buf*.yaml
+!proto/**/*.proto

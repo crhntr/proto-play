@@ -1,0 +1,41 @@
+syntax = "proto3";
+package api.playground.v1;
+
+option go_package = "github.com/crhntr/proto-play/api/playground/v1";
+
+message Username {
+  string value = 1;
+}
+
+message PersonName {
+  string first = 1;
+  string last = 2;
+}
+
+message Identifier {
+  oneof id {
+    Username un = 1;
+    PersonName pn = 2;
+  }
+}
+
+message ListByIDKeyRequest {
+  Identifier query = 1;
+}
+
+message ListByIDKeyResponse {
+  repeated Identifier messages = 1;
+}
+
+message ExistsRequest {
+  Identifier query = 1;
+}
+
+message ExistsResponse {
+  bool found = 1;
+}
+
+service StoreService {
+  rpc ListByIDKey(ListByIDKeyRequest) returns (ListByIDKeyResponse);
+  rpc Exists(ExistsRequest) returns (ExistsResponse);
+}
