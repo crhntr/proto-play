@@ -40,8 +40,15 @@ func Run(ctx context.Context, run func(ctx context.Context, pool *pgxpool.Pool) 
 	if !ok || dbName == "" {
 		return errors.New("PGDATABASE environment variable not set")
 	}
-	pool, err := createDatabase(ctx, dbName)
+	dbURL, err := databaseURLFromEnv(dbName)
 	if err != nil {
+		return err
+	}
+	pool, err := pgxpool.New(ctx, dbURL)
+	if err != nil {
+		return err
+	}
+	if err := pool.Ping(ctx); err != nil {
 		return err
 	}
 	defer pool.Close()
@@ -70,34 +77,4 @@ func databaseURLFromEnv(name string) (string, error) {
 		return "", errors.New("PGQUERYSTRING environment variable not set")
 	}
 	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?%s", user, password, host, port, name, query), nil
-}
-
-func createDatabase(ctx context.Context, name string) (*pgxpool.Pool, error) {
-	//pgURL, err := databaseURLFromEnv("postgres")
-	//if err != nil {
-	//	return nil, err
-	//}
-	//pgPool, err := pgxpool.New(ctx, pgURL)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//if err := pgPool.Ping(ctx); err != nil {
-	//	return nil, err
-	//}
-	//_, _ = pgPool.Exec(ctx, fmt.Sprintf(`DROP DATABASE %s`, name))
-	//if _, err := pgPool.Exec(ctx, fmt.Sprintf(`CREATE DATABASE %s`, name)); err != nil {
-	//	return nil, err
-	//}
-	dbURL, err := databaseURLFromEnv(name)
-	if err != nil {
-		return nil, err
-	}
-	pool, err := pgxpool.New(ctx, dbURL)
-	if err != nil {
-		return nil, err
-	}
-	if err := pool.Ping(ctx); err != nil {
-		return nil, err
-	}
-	return pool, nil
 }
