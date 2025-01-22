@@ -11,3 +11,4 @@ sql:
         package: "database"
         out: "database"
         sql_package: "pgx/v5"
+        emit_interface: true

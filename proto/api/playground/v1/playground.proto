@@ -35,7 +35,16 @@ message ExistsResponse {
   bool found = 1;
 }
 
+message CreateRequest {
+  Identifier content = 1;
+}
+
+message CreateResponse {
+  int64 number = 1;
+}
+
 service StoreService {
   rpc ListByIDKey(ListByIDKeyRequest) returns (ListByIDKeyResponse);
   rpc Exists(ExistsRequest) returns (ExistsResponse);
+  rpc Create(CreateRequest) returns (CreateResponse);
 }

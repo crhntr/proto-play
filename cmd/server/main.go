@@ -6,11 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -18,13 +18,30 @@ import (
 
 	play "github.com/crhntr/proto-play"
 	"github.com/crhntr/proto-play/api/playground/v1/v1connect"
+	"github.com/crhntr/proto-play/database"
 )
 
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
-	err := database(ctx, func(ctx context.Context, tx pgx.Tx) error {
-		srv := new(play.Server)
+	err := runWithDB(ctx, func(ctx context.Context, pool *pgxpool.Pool) error {
+		srv := play.New(slog.Default(), func(ctx context.Context, f func(q database.Querier) error) error {
+			tx, err := pool.Begin(ctx)
+			if err != nil {
+				return err
+			}
+			defer func() { _ = tx.Rollback(ctx) }()
+
+			q := database.New(tx)
+
+			if err := f(q); err != nil {
+				return err
+			}
+			if err := tx.Commit(ctx); err != nil {
+				return err
+			}
+			return nil
+		})
 
 		path, handler := v1connect.NewStoreServiceHandler(srv)
 
@@ -45,7 +62,7 @@ func main() {
 			<-ctx.Done()
 			return server.Close()
 		})
-		if err := eg.Wait(); err != nil && !errors.Is(err, context.Canceled) {
+		if err := eg.Wait(); err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, http.ErrServerClosed) {
 			return err
 		}
 		return nil
@@ -55,32 +72,17 @@ func main() {
 	}
 }
 
-func database(ctx context.Context, run func(ctx context.Context, tx pgx.Tx) error) error {
+func runWithDB(ctx context.Context, run func(ctx context.Context, pool *pgxpool.Pool) error) error {
 	dbName, ok := os.LookupEnv("PGDATABASE")
 	if !ok || dbName == "" {
-		return (errors.New("PGDATABASE environment variable not set"))
+		return errors.New("PGDATABASE environment variable not set")
 	}
 	pool, err := createDatabase(ctx, dbName)
 	if err != nil {
 		return err
 	}
 	defer pool.Close()
-
-	tx, err := pool.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = tx.Rollback(ctx) }()
-
-	if err := run(ctx, tx); err != nil {
-		return err
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
-
-	return nil
+	return run(ctx, pool)
 }
 
 func databaseURLFromEnv(name string) (string, error) {
