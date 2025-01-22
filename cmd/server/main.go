@@ -54,7 +54,7 @@ func main() {
 			Handler: h2c.NewHandler(mux, &http2.Server{}),
 		}
 
-		eg := errgroup.Group{}
+		eg := new(errgroup.Group)
 		eg.Go(func() error {
 			return server.ListenAndServe()
 		})
@@ -62,7 +62,13 @@ func main() {
 			<-ctx.Done()
 			return server.Close()
 		})
-		if err := eg.Wait(); err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, http.ErrServerClosed) {
+		if err := eg.Wait(); err != nil {
+			if errors.Is(err, context.Canceled) {
+				return nil
+			}
+			if errors.Is(err, http.ErrServerClosed) {
+				return nil
+			}
 			return err
 		}
 		return nil
