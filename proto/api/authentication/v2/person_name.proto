@@ -1,0 +1,12 @@
+syntax = "proto3";
+package api.authentication.v2;
+
+option go_package = "github.com/crhntr/proto-play/api/authentication/v2";
+
+message PersonName {
+  string first = 1;
+  repeated string middle = 3;
+  string last = 2;
+  optional string maternal = 4;
+}
+
