@@ -23,8 +23,7 @@
 # ...even if they are in subdirectories
 !*/
 
-!migrations/*.sql
-!queries/*.sql
+!database/*/*.sql
 !sqlc.yaml
 
 !.envrc
