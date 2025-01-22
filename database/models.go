@@ -4,7 +4,11 @@
 
 package database
 
+import (
+	"encoding/json"
+)
+
 type Message struct {
 	ID      int64
-	Content []byte
+	Content json.RawMessage
 }

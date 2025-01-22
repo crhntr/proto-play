@@ -6,11 +6,12 @@ package database
 
 import (
 	"context"
+	"encoding/json"
 )
 
 type Querier interface {
-	Add(ctx context.Context, content []byte) (int64, error)
-	Find(ctx context.Context, content []byte) (Message, error)
+	Add(ctx context.Context, content json.RawMessage) (int64, error)
+	Find(ctx context.Context, content json.RawMessage) (Message, error)
 }
 
 var _ Querier = (*Queries)(nil)

@@ -7,13 +7,14 @@ package database
 
 import (
 	"context"
+	"encoding/json"
 )
 
 const add = `-- name: Add :one
 INSERT INTO messages (content) VALUES ($1) RETURNING id
 `
 
-func (q *Queries) Add(ctx context.Context, content []byte) (int64, error) {
+func (q *Queries) Add(ctx context.Context, content json.RawMessage) (int64, error) {
 	row := q.db.QueryRow(ctx, add, content)
 	var id int64
 	err := row.Scan(&id)
@@ -24,7 +25,7 @@ const find = `-- name: Find :one
 SELECT id, content FROM messages WHERE content = ($1::jsonb)
 `
 
-func (q *Queries) Find(ctx context.Context, content []byte) (Message, error) {
+func (q *Queries) Find(ctx context.Context, content json.RawMessage) (Message, error) {
 	row := q.db.QueryRow(ctx, find, content)
 	var i Message
 	err := row.Scan(&i.ID, &i.Content)

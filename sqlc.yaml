@@ -2,8 +2,8 @@ version: "2"
 
 sql:
   - engine: "postgresql"
-    queries: "./queries"
-    schema: "./migrations"
+    queries: "./database/queries"
+    schema: "./database/migrations"
     database:
       uri: "postgres://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/${PGDATABASE}"
     gen:
@@ -12,3 +12,9 @@ sql:
         out: "database"
         sql_package: "pgx/v5"
         emit_interface: true
+        overrides:
+          - db_type: jsonb
+            go_type:
+              import: "encoding/json"
+              type: "RawMessage"
+            
