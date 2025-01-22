@@ -6,12 +6,18 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func TransactionWrapper(pool *pgxpool.Pool) func(ctx context.Context, f func(q Querier) error) error {
-	return func(ctx context.Context, f func(q Querier) error) error {
-		tx, err := pool.Begin(ctx)
+type (
+	TransactionFunc     func(q Querier) error
+	WrapTransactionFunc func(ctx context.Context, options pgx.TxOptions, f TransactionFunc) error
+)
+
+func TransactionWrapper(pool *pgxpool.Pool) WrapTransactionFunc {
+	return func(ctx context.Context, o pgx.TxOptions, f TransactionFunc) error {
+		tx, err := pool.BeginTx(ctx, o)
 		if err != nil {
 			return err
 		}
