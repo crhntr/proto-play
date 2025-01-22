@@ -8,7 +8,7 @@ package v1
 
 import (
 	v1 "github.com/crhntr/proto-play/api/authentication/v1"
-	v2 "github.com/crhntr/proto-play/api/authentication/v2"
+	v3 "github.com/crhntr/proto-play/api/authentication/v3"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -175,7 +175,7 @@ func (x *Identifier) GetUn() *v1.Username {
 	return nil
 }
 
-func (x *Identifier) GetPn() *v2.PersonName {
+func (x *Identifier) GetPn() *v3.PersonName {
 	if x != nil {
 		if x, ok := x.Id.(*Identifier_Pn); ok {
 			return x.Pn
@@ -193,7 +193,7 @@ type Identifier_Un struct {
 }
 
 type Identifier_Pn struct {
-	Pn *v2.PersonName `protobuf:"bytes,2,opt,name=pn,proto3,oneof"`
+	Pn *v3.PersonName `protobuf:"bytes,2,opt,name=pn,proto3,oneof"`
 }
 
 func (*Identifier_Un) isIdentifier_Id() {}
@@ -560,7 +560,7 @@ var file_api_playground_v1_playground_proto_goTypes = []any{
 	(*CreateRequest)(nil),       // 7: api.playground.v1.CreateRequest
 	(*CreateResponse)(nil),      // 8: api.playground.v1.CreateResponse
 	(*v1.Username)(nil),         // 9: api.authentication.v1.Username
-	(*v2.PersonName)(nil),       // 10: api.authentication.v3.PersonName
+	(*v3.PersonName)(nil),       // 10: api.authentication.v3.PersonName
 }
 var file_api_playground_v1_playground_proto_depIdxs = []int32{
 	9,  // 0: api.playground.v1.Identifier.un:type_name -> api.authentication.v1.Username
