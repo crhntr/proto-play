@@ -2,7 +2,7 @@ syntax = "proto3";
 package api.playground.v1;
 
 import "api/authentication/v1/username.proto";
-import "api/authentication/v2/person_name.proto";
+import "api/authentication/v3/person_name.proto";
 
 option go_package = "github.com/crhntr/proto-play/api/playground/v1";
 
@@ -18,7 +18,7 @@ message PersonName {
 message Identifier {
   oneof id {
     api.authentication.v1.Username un = 1;
-    api.authentication.v2.PersonName pn = 2;
+    api.authentication.v3.PersonName pn = 2;
   }
 }
 
