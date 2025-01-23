@@ -12,6 +12,7 @@ import (
 type Querier interface {
 	Add(ctx context.Context, content json.RawMessage) (int64, error)
 	Find(ctx context.Context, content json.RawMessage) (Message, error)
+	List(ctx context.Context) ([]Message, error)
 }
 
 var _ Querier = (*Queries)(nil)

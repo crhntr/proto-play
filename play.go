@@ -100,6 +100,32 @@ func (s *Server) Create(ctx context.Context, req *connect.Request[v1.CreateReque
 	return res, nil
 }
 
+func (s *Server) List(ctx context.Context, req *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error) {
+	res := connect.NewResponse(new(v1.ListResponse))
+	if err := s.transaction(ctx, pgx.TxOptions{
+		AccessMode: pgx.ReadOnly,
+	}, func(q database.Querier) error {
+		messages, err := q.List(ctx)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return connect.NewError(connect.CodeNotFound, fmt.Errorf("query not found"))
+			}
+			return err
+		}
+		list := make([]v1.Identifier, len(messages))
+		for i, message := range messages {
+			if err := protojson.Unmarshal(message.Content, &list[i]); err != nil {
+				return connect.NewError(connect.CodeInvalidArgument, err)
+			}
+			res.Msg.List = append(res.Msg.List, &list[i])
+		}
+		return nil
+	}); err != nil {
+		return nil, connectError(err)
+	}
+	return res, nil
+}
+
 func connectError(err error) error {
 	var cErr *connect.Error
 	if errors.As(err, &cErr) {

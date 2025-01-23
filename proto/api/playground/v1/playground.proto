@@ -46,8 +46,14 @@ message CreateResponse {
   int64 number = 1;
 }
 
+message ListRequest {}
+message ListResponse {
+  repeated Identifier list = 1;
+}
+
 service StoreService {
   rpc ListByIDKey(ListByIDKeyRequest) returns (ListByIDKeyResponse);
   rpc Exists(ExistsRequest) returns (ExistsResponse);
   rpc Create(CreateRequest) returns (CreateResponse);
+  rpc List(ListRequest) returns (ListResponse);
 }

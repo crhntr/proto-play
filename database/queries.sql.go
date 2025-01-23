@@ -31,3 +31,27 @@ func (q *Queries) Find(ctx context.Context, content json.RawMessage) (Message, e
 	err := row.Scan(&i.ID, &i.Content)
 	return i, err
 }
+
+const list = `-- name: List :many
+SELECT id, content FROM messages
+`
+
+func (q *Queries) List(ctx context.Context) ([]Message, error) {
+	rows, err := q.db.Query(ctx, list)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Message
+	for rows.Next() {
+		var i Message
+		if err := rows.Scan(&i.ID, &i.Content); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

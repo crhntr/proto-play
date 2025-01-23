@@ -40,6 +40,8 @@ const (
 	StoreServiceExistsProcedure = "/api.playground.v1.StoreService/Exists"
 	// StoreServiceCreateProcedure is the fully-qualified name of the StoreService's Create RPC.
 	StoreServiceCreateProcedure = "/api.playground.v1.StoreService/Create"
+	// StoreServiceListProcedure is the fully-qualified name of the StoreService's List RPC.
+	StoreServiceListProcedure = "/api.playground.v1.StoreService/List"
 )
 
 // StoreServiceClient is a client for the api.playground.v1.StoreService service.
@@ -47,6 +49,7 @@ type StoreServiceClient interface {
 	ListByIDKey(context.Context, *connect.Request[v1.ListByIDKeyRequest]) (*connect.Response[v1.ListByIDKeyResponse], error)
 	Exists(context.Context, *connect.Request[v1.ExistsRequest]) (*connect.Response[v1.ExistsResponse], error)
 	Create(context.Context, *connect.Request[v1.CreateRequest]) (*connect.Response[v1.CreateResponse], error)
+	List(context.Context, *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error)
 }
 
 // NewStoreServiceClient constructs a client for the api.playground.v1.StoreService service. By
@@ -78,6 +81,12 @@ func NewStoreServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(storeServiceMethods.ByName("Create")),
 			connect.WithClientOptions(opts...),
 		),
+		list: connect.NewClient[v1.ListRequest, v1.ListResponse](
+			httpClient,
+			baseURL+StoreServiceListProcedure,
+			connect.WithSchema(storeServiceMethods.ByName("List")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -86,6 +95,7 @@ type storeServiceClient struct {
 	listByIDKey *connect.Client[v1.ListByIDKeyRequest, v1.ListByIDKeyResponse]
 	exists      *connect.Client[v1.ExistsRequest, v1.ExistsResponse]
 	create      *connect.Client[v1.CreateRequest, v1.CreateResponse]
+	list        *connect.Client[v1.ListRequest, v1.ListResponse]
 }
 
 // ListByIDKey calls api.playground.v1.StoreService.ListByIDKey.
@@ -103,11 +113,17 @@ func (c *storeServiceClient) Create(ctx context.Context, req *connect.Request[v1
 	return c.create.CallUnary(ctx, req)
 }
 
+// List calls api.playground.v1.StoreService.List.
+func (c *storeServiceClient) List(ctx context.Context, req *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error) {
+	return c.list.CallUnary(ctx, req)
+}
+
 // StoreServiceHandler is an implementation of the api.playground.v1.StoreService service.
 type StoreServiceHandler interface {
 	ListByIDKey(context.Context, *connect.Request[v1.ListByIDKeyRequest]) (*connect.Response[v1.ListByIDKeyResponse], error)
 	Exists(context.Context, *connect.Request[v1.ExistsRequest]) (*connect.Response[v1.ExistsResponse], error)
 	Create(context.Context, *connect.Request[v1.CreateRequest]) (*connect.Response[v1.CreateResponse], error)
+	List(context.Context, *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error)
 }
 
 // NewStoreServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -135,6 +151,12 @@ func NewStoreServiceHandler(svc StoreServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(storeServiceMethods.ByName("Create")),
 		connect.WithHandlerOptions(opts...),
 	)
+	storeServiceListHandler := connect.NewUnaryHandler(
+		StoreServiceListProcedure,
+		svc.List,
+		connect.WithSchema(storeServiceMethods.ByName("List")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/api.playground.v1.StoreService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case StoreServiceListByIDKeyProcedure:
@@ -143,6 +165,8 @@ func NewStoreServiceHandler(svc StoreServiceHandler, opts ...connect.HandlerOpti
 			storeServiceExistsHandler.ServeHTTP(w, r)
 		case StoreServiceCreateProcedure:
 			storeServiceCreateHandler.ServeHTTP(w, r)
+		case StoreServiceListProcedure:
+			storeServiceListHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -162,4 +186,8 @@ func (UnimplementedStoreServiceHandler) Exists(context.Context, *connect.Request
 
 func (UnimplementedStoreServiceHandler) Create(context.Context, *connect.Request[v1.CreateRequest]) (*connect.Response[v1.CreateResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api.playground.v1.StoreService.Create is not implemented"))
+}
+
+func (UnimplementedStoreServiceHandler) List(context.Context, *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api.playground.v1.StoreService.List is not implemented"))
 }
