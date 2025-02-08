@@ -18,13 +18,17 @@ import (
 //go:generate buf generate
 //go:generate sqlc generate
 
-type Server struct {
-	log         *slog.Logger
-	transaction database.WrapTransactionFunc
+type Querier interface {
+	Query(ctx context.Context, f database.QuerierFunc) error
 }
 
-func New(logger *slog.Logger, tx database.WrapTransactionFunc) *Server {
-	return &Server{log: logger, transaction: tx}
+type Server struct {
+	log *slog.Logger
+	db  Querier
+}
+
+func New(logger *slog.Logger, db Querier) *Server {
+	return &Server{log: logger, db: db}
 }
 
 var _ v1connect.StoreServiceHandler = (*Server)(nil)
@@ -36,9 +40,7 @@ func (s *Server) ListByIDKey(ctx context.Context, req *connect.Request[v1.ListBy
 	}
 	s.log.Debug("exists", "query_json", string(queryJSON))
 	res := connect.NewResponse(new(v1.ListByIDKeyResponse))
-	if err := s.transaction(ctx, pgx.TxOptions{
-		AccessMode: pgx.ReadOnly,
-	}, func(q database.Querier) error {
+	if err = s.db.Query(ctx, func(q database.Querier) error {
 		_, err := q.Find(ctx, queryJSON)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
@@ -61,9 +63,7 @@ func (s *Server) Exists(ctx context.Context, req *connect.Request[v1.ExistsReque
 	}
 	s.log.Debug("exists", "query_json", string(queryJSON))
 	res := connect.NewResponse(new(v1.ExistsResponse))
-	if err := s.transaction(ctx, pgx.TxOptions{
-		AccessMode: pgx.ReadOnly,
-	}, func(q database.Querier) error {
+	if err = s.db.Query(ctx, func(q database.Querier) error {
 		_, err := q.Find(ctx, queryJSON)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
@@ -85,9 +85,7 @@ func (s *Server) Create(ctx context.Context, req *connect.Request[v1.CreateReque
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	res := connect.NewResponse(new(v1.CreateResponse))
-	if err := s.transaction(ctx, pgx.TxOptions{
-		AccessMode: pgx.ReadWrite,
-	}, func(q database.Querier) error {
+	if err = s.db.Query(ctx, func(q database.Querier) error {
 		number, err := q.Add(ctx, contentJSON)
 		if err != nil {
 			return err
@@ -102,9 +100,7 @@ func (s *Server) Create(ctx context.Context, req *connect.Request[v1.CreateReque
 
 func (s *Server) List(ctx context.Context, req *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error) {
 	res := connect.NewResponse(new(v1.ListResponse))
-	if err := s.transaction(ctx, pgx.TxOptions{
-		AccessMode: pgx.ReadOnly,
-	}, func(q database.Querier) error {
+	if err := s.db.Query(ctx, func(q database.Querier) error {
 		messages, err := q.List(ctx)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {

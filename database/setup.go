@@ -6,34 +6,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/crhntr/transaction"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
-
-type (
-	TransactionFunc     func(q Querier) error
-	WrapTransactionFunc func(ctx context.Context, options pgx.TxOptions, f TransactionFunc) error
-)
-
-func TransactionWrapper(pool *pgxpool.Pool) WrapTransactionFunc {
-	return func(ctx context.Context, o pgx.TxOptions, f TransactionFunc) error {
-		tx, err := pool.BeginTx(ctx, o)
-		if err != nil {
-			return err
-		}
-		defer func() { _ = tx.Rollback(ctx) }()
-
-		q := New(tx)
-
-		if err := f(q); err != nil {
-			return err
-		}
-		if err := tx.Commit(ctx); err != nil {
-			return err
-		}
-		return nil
-	}
-}
 
 func Run(ctx context.Context, run func(ctx context.Context, pool *pgxpool.Pool) error) error {
 	dbName, ok := os.LookupEnv("PGDATABASE")
@@ -77,4 +53,26 @@ func databaseURLFromEnv(name string) (string, error) {
 		return "", errors.New("PGQUERYSTRING environment variable not set")
 	}
 	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?%s", user, password, host, port, name, query), nil
+}
+
+type QuerierFunc func(Querier) error
+
+func (f QuerierFunc) Func(_ context.Context, tx pgx.Tx) error {
+	return f(New(tx))
+}
+
+type caller interface {
+	Call(ctx context.Context, opt pgx.TxOptions, f transaction.Func) error
+}
+
+type Connection struct {
+	manager caller
+}
+
+func Use(db transaction.Beginner) *Connection {
+	return &Connection{manager: transaction.NewManager(db)}
+}
+
+func (c *Connection) Query(ctx context.Context, f QuerierFunc) error {
+	return c.manager.Call(ctx, pgx.TxOptions{}, f.Func)
 }

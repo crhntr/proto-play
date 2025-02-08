@@ -24,7 +24,9 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 	err := database.Run(ctx, func(ctx context.Context, pool *pgxpool.Pool) error {
-		srv := play.New(slog.Default(), database.TransactionWrapper(pool))
+		p := database.Use(pool)
+
+		srv := play.New(slog.Default(), p)
 
 		path, handler := v1connect.NewStoreServiceHandler(srv)
 
